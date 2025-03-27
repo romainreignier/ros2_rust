@@ -504,8 +504,9 @@ mod tests {
         let mut wait_set = WaitSet::new(0, 0, 1, 0, 0, 0, &context)?;
         wait_set.add_timer(timer.clone())?;
 
-        let readies = wait_set.wait(Some(std::time::Duration::from_micros(0)))?;
-        assert!(!readies.timers.contains(&timer));
+        let readies = wait_set.wait(Some(std::time::Duration::from_micros(0)));
+        // Timeout
+        assert!(readies.is_err());
 
         Ok(())
     }
