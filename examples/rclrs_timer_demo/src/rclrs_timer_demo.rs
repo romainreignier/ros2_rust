@@ -3,11 +3,7 @@
 /// thanks to the spin, which is in charge of executing the timer's events among
 /// other entities' events.
 use rclrs::{create_node, Context, Node, RclrsError, Timer};
-use std::{
-    env,
-    sync::Arc,
-    time::Duration,
-};
+use std::{env, sync::Arc, time::Duration};
 
 /// Contains both the node and timer.
 struct SimpleTimerNode {
@@ -25,22 +21,17 @@ impl SimpleTimerNode {
     fn new(context: &Context, timer_period: Duration) -> Result<Self, RclrsError> {
         let node = create_node(context, "simple_timer_node")?;
         let mut x = 0;
-        let timer = node.create_timer_repeating(
-            timer_period,
-            move || {
-                x += 1;
-                println!(
-                    "Drinking 🧉 for the {x}th time every {:?}.",
-                    timer_period,
-                );
-            },
-        )?;
+        let timer = node.create_timer_repeating(timer_period, move || {
+            x += 1;
+            println!("Drinking 🧉 for the {x}th time every {:?}.", timer_period,);
+        })?;
         Ok(Self { node, timer })
     }
 }
 
 fn main() -> Result<(), RclrsError> {
     let context = Context::new(env::args()).unwrap();
-    let simple_timer_node = Arc::new(SimpleTimerNode::new(&context, Duration::from_secs(1)).unwrap());
+    let simple_timer_node =
+        Arc::new(SimpleTimerNode::new(&context, Duration::from_secs(1)).unwrap());
     rclrs::spin(simple_timer_node.node.clone())
 }
