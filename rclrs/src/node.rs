@@ -577,8 +577,11 @@ mod tests {
     use crate::test_helpers::*;
 
     use std::{
+        sync::{
+            atomic::{AtomicU64, Ordering},
+            Arc,
+        },
         time::{Duration, Instant},
-        sync::{Arc, atomic::{AtomicU64, Ordering}},
     };
 
     #[test]
@@ -641,28 +644,25 @@ mod tests {
 
         let repeat_counter = Arc::new(AtomicU64::new(0));
         let repeat_counter_check = Arc::clone(&repeat_counter);
-        let _repeating_timer = node.create_timer_repeating(
-            Duration::from_millis(1),
-            move || { repeat_counter.fetch_add(1, Ordering::AcqRel); },
-        )?;
+        let _repeating_timer =
+            node.create_timer_repeating(Duration::from_millis(1), move || {
+                repeat_counter.fetch_add(1, Ordering::AcqRel);
+            })?;
         assert_eq!(node.live_timers().len(), 1);
 
         let oneshot_counter = Arc::new(AtomicU64::new(0));
         let oneshot_counter_check = Arc::clone(&oneshot_counter);
-        let _oneshot_timer = node.create_timer_oneshot(
-            Duration::from_millis(1)
-            .node_time(),
-            move || { oneshot_counter.fetch_add(1, Ordering::AcqRel); },
-        )?;
+        let _oneshot_timer =
+            node.create_timer_oneshot(Duration::from_millis(1).node_time(), move || {
+                oneshot_counter.fetch_add(1, Ordering::AcqRel);
+            })?;
 
         let oneshot_resetting_counter = Arc::new(AtomicU64::new(0));
         let oneshot_resetting_counter_check = Arc::clone(&oneshot_resetting_counter);
-        let _oneshot_resetting_timer = node.create_timer_oneshot(
-            Duration::from_millis(1),
-            move |timer: &Timer| {
+        let _oneshot_resetting_timer =
+            node.create_timer_oneshot(Duration::from_millis(1), move |timer: &Timer| {
                 recursive_oneshot(timer, oneshot_resetting_counter);
-            },
-        );
+            });
 
         let start = Instant::now();
         while start.elapsed() < Duration::from_millis(10) {
@@ -681,10 +681,7 @@ mod tests {
         Ok(())
     }
 
-    fn recursive_oneshot(
-        timer: &Timer,
-        counter: Arc<AtomicU64>,
-    ) {
+    fn recursive_oneshot(timer: &Timer, counter: Arc<AtomicU64>) {
         counter.fetch_add(1, Ordering::AcqRel);
         timer.set_oneshot(move |timer: &Timer| {
             recursive_oneshot(timer, counter);
